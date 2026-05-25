@@ -20,27 +20,14 @@ export default function App() {
 
   return (
     <div
+      className="app-layout"
       style={{
-        minHeight: '100vh',
         background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'stretch',
-        padding: 20,
-        gap: 20,
         fontFamily: 'var(--font-sans)',
       }}
     >
-      {/* Plot area */}
-      <div
-        style={{
-          flex: 1,
-          background: 'var(--bg-card)',
-          border: '0.5px solid var(--border)',
-          borderRadius: 'var(--radius-xl)',
-          overflow: 'hidden',
-          minHeight: 500,
-        }}
-      >
+      {/* Plot area — capped height so the chart does not dominate */}
+      <div className="app-plot">
         <ScatterPlot
           points={state.points}
           guessSlope={state.guessSlope}
@@ -53,16 +40,9 @@ export default function App() {
         />
       </div>
 
-      {/* Right panel */}
-      <div
-        style={{
-          width: 300,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-          overflowY: 'auto',
-        }}
-      >
+      {/* Right panel — equal width/height with chart */}
+      <div className="app-sidebar">
+        <div className="app-sidebar__scroll">
         <ControlPanel
           guessSlope={state.guessSlope}
           guessIntercept={state.guessIntercept}
@@ -86,6 +66,7 @@ export default function App() {
           onDifficultyChange={setDifficulty}
         />
         <ScoreHistory history={state.history} />
+        </div>
       </div>
     </div>
   )

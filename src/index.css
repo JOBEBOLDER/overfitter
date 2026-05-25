@@ -54,6 +54,227 @@ input[type="range"] {
   cursor: pointer;
 }
 
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  min-height: calc(100vh - 40px);
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.app-plot {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 520px;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  height: 100%;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+  font-size: 15px;
+}
+
+.app-sidebar__scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overflow-x: visible;
+}
+
+/* —— Right panel typography (larger) —— */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.control-panel__title {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+
+.control-panel__round {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.control-panel__subtitle {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  line-height: 1.55;
+}
+
+.control-panel__section-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.control-panel__card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+
+.control-panel__score-lg {
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.control-panel__score-md {
+  font-size: 24px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.control-panel__slider-label {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.control-panel__slider-value {
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+.control-panel__diff-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8;
+  border: 0.5px solid;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.control-panel__metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  overflow: visible;
+}
+
+.control-panel__metric-cell {
+  background: var(--bg-muted);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow: visible;
+  position: relative;
+}
+
+.control-panel__metric-cell:has(.metric-tooltip:hover),
+.control-panel__metric-cell:has(.metric-tooltip:focus-within) {
+  z-index: 20;
+}
+
+.control-panel__metric-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.control-panel__metric-value {
+  font-size: 24px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.control-panel__body-text {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.control-panel__feedback {
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.control-panel__btn {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+}
+
+.control-panel__btn--primary {
+  flex: 1;
+  border: none;
+  font-weight: 500;
+}
+
+.control-panel__btn--ghost {
+  border: 0.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.score-history__label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.score-history__round-score {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    max-width: none;
+    min-height: auto;
+  }
+
+  .app-plot,
+  .app-sidebar {
+    min-height: 400px;
+    height: auto;
+  }
+
+  .app-plot {
+    min-height: min(420px, 55vh);
+  }
+}
+
 .metric-tooltip {
   position: relative;
   display: inline-flex;
@@ -87,24 +308,33 @@ input[type="range"] {
 
 .metric-tooltip__content {
   position: absolute;
-  z-index: 20;
-  left: 50%;
-  bottom: calc(100% + 6px);
-  transform: translateX(-50%);
+  z-index: 200;
+  top: calc(100% + 8px);
+  left: 0;
+  right: auto;
+  bottom: auto;
+  transform: none;
   width: max-content;
-  max-width: 200px;
-  padding: 8px 10px;
+  max-width: min(280px, 42vw);
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   background: var(--text-primary);
   color: #fff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.5;
   text-align: left;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.12s, visibility 0.12s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.metric-tooltip__trigger {
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
 }
 
 .metric-tooltip:hover .metric-tooltip__content,
