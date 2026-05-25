@@ -1,0 +1,55 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --bg: #f5f4f0;
+  --bg-card: #ffffff;
+  --bg-muted: #f0efe9;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+
+  --text-primary: #1a1916;
+  --text-secondary: #6b6a65;
+  --text-tertiary: #a09f9a;
+
+  --blue: #185FA5;
+  --blue-light: #e6f1fb;
+  --blue-mid: #378ADD;
+  --green: #3B6D11;
+  --green-light: #eaf3de;
+  --green-mid: #639922;
+  --red: #993C1D;
+  --red-light: #faece7;
+  --amber: #854F0B;
+  --amber-light: #faeeda;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--blue);
+  cursor: pointer;
+}

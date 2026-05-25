@@ -1,0 +1,301 @@
+import type { Difficulty } from '../types'
+import { DIFFICULTY_CONFIG } from '../types'
+
+interface Props {
+  guessSlope: number
+  guessIntercept: number
+  mse: number
+  mae: number
+  r2: number
+  phase: 'guessing' | 'submitted' | 'animating'
+  totalScore: number
+  lastScore: number | null
+  feedback: { text: string; tone: 'good' | 'ok' | 'bad' } | null
+  targetSlope: number
+  targetIntercept: number
+  difficulty: Difficulty
+  round: number
+  onSlopeChange: (v: number) => void
+  onInterceptChange: (v: number) => void
+  onSubmit: () => void
+  onNext: () => void
+  onReset: () => void
+  onDifficultyChange: (d: Difficulty) => void
+}
+
+const toneColors: Record<string, { bg: string; text: string; border: string }> = {
+  good: { bg: '#eaf3de', text: '#3B6D11', border: '#c0dd97' },
+  ok: { bg: '#faeeda', text: '#854F0B', border: '#fac775' },
+  bad: { bg: '#faece7', text: '#993C1D', border: '#f5c4b3' },
+}
+
+export default function ControlPanel({
+  guessSlope,
+  guessIntercept,
+  mse,
+  mae,
+  r2,
+  phase,
+  totalScore,
+  lastScore,
+  feedback,
+  targetSlope,
+  targetIntercept,
+  difficulty,
+  round,
+  onSlopeChange,
+  onInterceptChange,
+  onSubmit,
+  onNext,
+  onReset,
+  onDifficultyChange,
+}: Props) {
+  const scoreColor =
+    totalScore > 0 ? '#3B6D11' : totalScore < 0 ? '#993C1D' : 'var(--text-secondary)'
+  const lastScoreColor =
+    lastScore !== null ? (lastScore >= 0 ? '#3B6D11' : '#993C1D') : 'var(--text-secondary)'
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        height: '100%',
+        overflowY: 'auto',
+      }}
+    >
+      {/* Header */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
+          <span style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.8px' }}>Overfitter</span>
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 400 }}>
+            Round {round}
+          </span>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+          Welcome. You're probably going to overfit.
+        </p>
+      </div>
+
+      {/* Score */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '0.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+            Total Score
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 600, color: scoreColor, fontVariantNumeric: 'tabular-nums' }}>
+            {totalScore > 0 ? '+' : ''}{totalScore.toLocaleString()}
+          </div>
+        </div>
+        {lastScore !== null && (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              Last Round
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 500, color: lastScoreColor, fontVariantNumeric: 'tabular-nums' }}>
+              {lastScore >= 0 ? '+' : ''}{lastScore.toLocaleString()}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Difficulty */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '0.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 16px',
+        }}
+      >
+        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+          Difficulty
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+            <button
+              key={d}
+              onClick={() => onDifficultyChange(d)}
+              style={{
+                flex: 1,
+                padding: '7px 0',
+                borderRadius: 8,
+                border: '0.5px solid',
+                borderColor: difficulty === d ? '#185FA5' : 'var(--border)',
+                background: difficulty === d ? '#e6f1fb' : 'transparent',
+                color: difficulty === d ? '#185FA5' : 'var(--text-secondary)',
+                fontSize: 12,
+                fontWeight: difficulty === d ? 500 : 400,
+                transition: 'all 0.15s',
+              }}
+            >
+              {DIFFICULTY_CONFIG[d].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Sliders */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '0.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 16px',
+        }}
+      >
+        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+          Adjust your line
+        </div>
+
+        {[
+          { label: 'Slope', id: 'slope', value: guessSlope, min: -3, max: 3, step: 0.01, display: guessSlope.toFixed(2), onChange: onSlopeChange },
+          { label: 'Intercept', id: 'intercept', value: guessIntercept, min: 0, max: 100, step: 0.5, display: guessIntercept.toFixed(1), onChange: onInterceptChange },
+        ].map((s) => (
+          <div key={s.id} style={{ marginBottom: s.id === 'slope' ? 14 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{s.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font-mono)' }}>
+                {s.display}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={s.min}
+              max={s.max}
+              step={s.step}
+              value={s.value}
+              disabled={phase === 'submitted'}
+              onChange={(e) => s.onChange(parseFloat(e.target.value))}
+              style={{ width: '100%', opacity: phase === 'submitted' ? 0.4 : 1 }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Metrics */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '0.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 16px',
+        }}
+      >
+        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+          Model Metrics
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[
+            { label: 'MSE', value: mse.toFixed(1) },
+            { label: 'R²', value: r2.toFixed(3) },
+            ...(phase === 'submitted'
+              ? [
+                  { label: 'Slope Δ', value: (guessSlope - targetSlope).toFixed(2) },
+                  { label: 'Intercept Δ', value: (guessIntercept - targetIntercept).toFixed(1) },
+                ]
+              : [
+                  { label: 'MAE', value: mae.toFixed(1) },
+                  { label: 'Points', value: '—' },
+                ]),
+          ].map((m) => (
+            <div
+              key={m.label}
+              style={{
+                background: 'var(--bg-muted)',
+                borderRadius: 8,
+                padding: '8px 12px',
+              }}
+            >
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>{m.label}</div>
+              <div style={{ fontSize: 17, fontWeight: 500, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
+                {m.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Feedback */}
+      {feedback && (
+        <div
+          style={{
+            background: toneColors[feedback.tone].bg,
+            border: `0.5px solid ${toneColors[feedback.tone].border}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px',
+            fontSize: 13,
+            color: toneColors[feedback.tone].text,
+            lineHeight: 1.6,
+          }}
+        >
+          {feedback.text}
+        </div>
+      )}
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+        <button
+          onClick={onReset}
+          style={{
+            padding: '10px 16px',
+            borderRadius: 10,
+            border: '0.5px solid var(--border-strong)',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: 13,
+            fontWeight: 400,
+          }}
+        >
+          Reset
+        </button>
+        {phase === 'guessing' ? (
+          <button
+            onClick={onSubmit}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#1a1916',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 500,
+              letterSpacing: '0.2px',
+            }}
+          >
+            Submit Guess
+          </button>
+        ) : (
+          <button
+            onClick={onNext}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#185FA5',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 500,
+              letterSpacing: '0.2px',
+            }}
+          >
+            Next Round →
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
