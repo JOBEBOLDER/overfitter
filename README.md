@@ -4,7 +4,7 @@
 
 A gamified machine learning playground that teaches **linear regression** through real-time parameter guessing, dynamic scatter plots, error metrics, and personalized feedback.
 
-![Overfitter Screenshot](./screenshot.png)
+
 
 ## What is this?
 
