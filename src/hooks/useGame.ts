@@ -6,6 +6,7 @@ import {
   computeMetrics,
   computeScore,
   getFeedback,
+  getWhatHappened,
 } from '../utils/math'
 
 interface GameState {
@@ -127,10 +128,23 @@ export function useGame(initialDifficulty: Difficulty = 'medium') {
 
   const lastResult = state.history[state.history.length - 1] ?? null
 
+  const whatHappened =
+    state.phase === 'submitted'
+      ? getWhatHappened(
+          metrics.mse,
+          metrics.r2,
+          state.guessSlope,
+          state.guessIntercept,
+          state.targetSlope,
+          state.targetIntercept
+        )
+      : null
+
   return {
     state,
     metrics,
     feedback,
+    whatHappened,
     lastResult,
     setGuessSlope,
     setGuessIntercept,

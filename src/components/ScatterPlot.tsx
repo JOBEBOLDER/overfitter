@@ -9,6 +9,9 @@ import {
 } from '../utils/canvas'
 import { lerp } from '../utils/math'
 
+/** Total animation duration — increase to slow down gradient descent */
+const GD_DURATION_MS = 3500
+
 interface Props {
   points: Point[]
   guessSlope: number
@@ -32,36 +35,49 @@ export default function ScatterPlot({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animRef = useRef<number>(0)
+  const savedGuessRef = useRef({ slope: guessSlope, intercept: guessIntercept })
   const [isAnimating, setIsAnimating] = useState(false)
-  const [animSlope, setAnimSlope] = useState(guessSlope)
-  const [animIntercept, setAnimIntercept] = useState(guessIntercept)
+  const [canUndo, setCanUndo] = useState(false)
+  const [viewSlope, setViewSlope] = useState(guessSlope)
+  const [viewIntercept, setViewIntercept] = useState(guessIntercept)
 
-  const draw = useCallback(
-    (overrideSlope?: number, overrideIntercept?: number) => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      const w = canvas.width / devicePixelRatio
-      const h = canvas.height / devicePixelRatio
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+  // Reset animation UI when leaving submitted phase (e.g. next round)
+  useEffect(() => {
+    if (phase !== 'submitted') {
+      cancelAnimationFrame(animRef.current)
+      setIsAnimating(false)
+      setCanUndo(false)
+    }
+  }, [phase])
 
-      const slope = overrideSlope ?? guessSlope
-      const intercept = overrideIntercept ?? guessIntercept
+  // Keep canvas line in sync with submitted guess unless animating or showing OLS result
+  useEffect(() => {
+    if (!isAnimating && !canUndo) {
+      setViewSlope(guessSlope)
+      setViewIntercept(guessIntercept)
+    }
+  }, [guessSlope, guessIntercept, isAnimating, canUndo])
 
-      drawGrid(ctx, w, h)
-      if (phase === 'submitted') {
-        drawErrorLines(ctx, points, slope, intercept, w, h)
-      }
-      drawPoints(ctx, points, w, h)
-      drawLine(ctx, slope, intercept, w, h, '#378ADD', 2.5)
-      if (phase === 'submitted') {
-        drawLine(ctx, olsSlope, olsIntercept, w, h, '#639922', 2, [7, 5])
-      }
-      drawLineLegend(ctx, w, h, phase === 'submitted')
-    },
-    [points, guessSlope, guessIntercept, olsSlope, olsIntercept, phase]
-  )
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const w = canvas.width / devicePixelRatio
+    const h = canvas.height / devicePixelRatio
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    drawGrid(ctx, w, h)
+    if (phase === 'submitted') {
+      drawErrorLines(ctx, points, viewSlope, viewIntercept, w, h)
+    }
+    drawPoints(ctx, points, w, h)
+    drawLine(ctx, viewSlope, viewIntercept, w, h, '#378ADD', 2.5)
+    if (phase === 'submitted') {
+      drawLine(ctx, olsSlope, olsIntercept, w, h, '#639922', 2, [7, 5])
+    }
+    drawLineLegend(ctx, w, h, phase === 'submitted')
+  }, [points, viewSlope, viewIntercept, olsSlope, olsIntercept, phase])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -84,36 +100,48 @@ export default function ScatterPlot({
     draw()
   }, [draw])
 
+  const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t)
+
+  const undoGradientDescent = useCallback(() => {
+    cancelAnimationFrame(animRef.current)
+    setIsAnimating(false)
+    setViewSlope(savedGuessRef.current.slope)
+    setViewIntercept(savedGuessRef.current.intercept)
+    setCanUndo(false)
+  }, [])
+
   const runGradientDescent = useCallback(() => {
     if (isAnimating) return
+    savedGuessRef.current = { slope: guessSlope, intercept: guessIntercept }
+    setCanUndo(false)
     setIsAnimating(true)
     cancelAnimationFrame(animRef.current)
 
-    let s = guessSlope
-    let b = guessIntercept
     const targetS = olsSlope
     const targetB = olsIntercept
-    const STEPS = 80
-    let step = 0
+    const startS = guessSlope
+    const startB = guessIntercept
+    const startTime = performance.now()
 
-    const animate = () => {
-      step++
-      const t = step / STEPS
-      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-      s = lerp(guessSlope, targetS, eased)
-      b = lerp(guessIntercept, targetB, eased)
-      setAnimSlope(s)
-      setAnimIntercept(b)
-      draw(s, b)
-      if (step < STEPS) {
+    const animate = (now: number) => {
+      const elapsed = now - startTime
+      const t = Math.min(1, elapsed / GD_DURATION_MS)
+      const eased = easeInOut(t)
+      const s = lerp(startS, targetS, eased)
+      const b = lerp(startB, targetB, eased)
+      setViewSlope(s)
+      setViewIntercept(b)
+      if (t < 1) {
         animRef.current = requestAnimationFrame(animate)
       } else {
+        setViewSlope(targetS)
+        setViewIntercept(targetB)
         setIsAnimating(false)
+        setCanUndo(true)
       }
     }
     animRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(animRef.current)
-  }, [guessSlope, guessIntercept, olsSlope, olsIntercept, isAnimating, draw])
+  }, [guessSlope, guessIntercept, olsSlope, olsIntercept, isAnimating])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -124,28 +152,55 @@ export default function ScatterPlot({
         role="img"
       />
       {phase === 'submitted' && (
-        <button
-          onClick={runGradientDescent}
-          disabled={isAnimating}
+        <div
           style={{
             position: 'absolute',
             bottom: 16,
             right: 16,
-            padding: '8px 16px',
-            background: isAnimating ? '#ccc' : '#1a1916',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: 12,
-            fontFamily: 'var(--font-sans)',
-            fontWeight: 500,
-            cursor: isAnimating ? 'default' : 'pointer',
-            transition: 'background 0.2s',
-            letterSpacing: '0.3px',
+            display: 'flex',
+            gap: 8,
           }}
         >
-          {isAnimating ? 'Descending...' : '▶ Gradient Descent'}
-        </button>
+          {canUndo && (
+            <button
+              onClick={undoGradientDescent}
+              disabled={isAnimating}
+              style={{
+                padding: '8px 16px',
+                background: '#fff',
+                color: 'var(--text-secondary)',
+                border: '0.5px solid var(--border-strong)',
+                borderRadius: 8,
+                fontSize: 12,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                cursor: isAnimating ? 'default' : 'pointer',
+                letterSpacing: '0.3px',
+              }}
+            >
+              ↩ Undo
+            </button>
+          )}
+          <button
+            onClick={runGradientDescent}
+            disabled={isAnimating}
+            style={{
+              padding: '8px 16px',
+              background: isAnimating ? '#ccc' : '#1a1916',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 12,
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 500,
+              cursor: isAnimating ? 'default' : 'pointer',
+              transition: 'background 0.2s',
+              letterSpacing: '0.3px',
+            }}
+          >
+            {isAnimating ? 'Descending...' : '▶ Gradient Descent'}
+          </button>
+        </div>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import type { Difficulty } from '../types'
 import { DIFFICULTY_CONFIG } from '../types'
+import MetricTooltip from './MetricTooltip'
 
 interface Props {
   guessSlope: number
@@ -11,6 +12,7 @@ interface Props {
   totalScore: number
   lastScore: number | null
   feedback: { text: string; tone: 'good' | 'ok' | 'bad' } | null
+  whatHappened: string | null
   targetSlope: number
   targetIntercept: number
   difficulty: Difficulty
@@ -39,6 +41,7 @@ export default function ControlPanel({
   totalScore,
   lastScore,
   feedback,
+  whatHappened,
   targetSlope,
   targetIntercept,
   difficulty,
@@ -197,19 +200,52 @@ export default function ControlPanel({
           Model Metrics
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[
-            { label: 'MSE', value: mse.toFixed(1) },
-            { label: 'R²', value: r2.toFixed(3) },
-            ...(phase === 'submitted'
-              ? [
-                  { label: 'Slope Δ', value: (guessSlope - targetSlope).toFixed(2) },
-                  { label: 'Intercept Δ', value: (guessIntercept - targetIntercept).toFixed(1) },
-                ]
-              : [
-                  { label: 'MAE', value: mae.toFixed(1) },
-                  { label: 'Points', value: '—' },
-                ]),
-          ].map((m) => (
+          {(phase === 'submitted'
+            ? [
+                {
+                  label: 'MSE',
+                  value: mse.toFixed(1),
+                  tip: 'Mean squared error — average squared gap from points to your line. Lower is better.',
+                },
+                {
+                  label: 'R²',
+                  value: r2.toFixed(3),
+                  tip: '1 = perfect fit, 0 = no better than a flat mean, <0 = worse than a flat line (overfit territory).',
+                },
+                {
+                  label: 'Slope Δ',
+                  value: (guessSlope - targetSlope).toFixed(2),
+                  tip: 'Your slope minus the hidden true slope. Large values mean you tilted too much or too little.',
+                },
+                {
+                  label: 'Intercept Δ',
+                  value: (guessIntercept - targetIntercept).toFixed(1),
+                  tip: 'Vertical offset vs the true line — shift up/down without changing tilt.',
+                },
+              ]
+            : [
+                {
+                  label: 'MSE',
+                  value: mse.toFixed(1),
+                  tip: 'Mean squared error — how far points sit from your line, on average (squared).',
+                },
+                {
+                  label: 'R²',
+                  value: r2.toFixed(3),
+                  tip: '1 = perfect fit, 0 = flat mean, <0 = your line is worse than guessing the average y.',
+                },
+                {
+                  label: 'MAE',
+                  value: mae.toFixed(1),
+                  tip: 'Mean absolute error — typical distance from a point to your line, without squaring.',
+                },
+                {
+                  label: 'Points',
+                  value: '32',
+                  tip: 'Random points this round. Noise level depends on difficulty.',
+                },
+              ]
+          ).map((m) => (
             <div
               key={m.label}
               style={{
@@ -218,7 +254,18 @@ export default function ControlPanel({
                 padding: '8px 12px',
               }}
             >
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 3 }}>{m.label}</div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-tertiary)',
+                  marginBottom: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {m.label}
+                <MetricTooltip tip={m.tip} />
+              </div>
               <div style={{ fontSize: 17, fontWeight: 500, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
                 {m.value}
               </div>
@@ -226,6 +273,31 @@ export default function ControlPanel({
           ))}
         </div>
       </div>
+
+      {/* What happened — only after submit */}
+      {whatHappened && (
+        <div
+          style={{
+            background: 'var(--bg-muted)',
+            border: '0.5px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              color: 'var(--text-tertiary)',
+              marginBottom: 6,
+              textTransform: 'uppercase',
+              letterSpacing: '0.6px',
+            }}
+          >
+            What happened
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{whatHappened}</p>
+        </div>
+      )}
 
       {/* Feedback */}
       {feedback && (

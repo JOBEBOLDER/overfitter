@@ -78,23 +78,68 @@ export function getFeedback(
   const id = guessIntercept - targetIntercept
 
   if (Math.abs(sd) < 0.08 && Math.abs(id) < 4) {
-    return { text: `Near-perfect fit. R² = ${r2.toFixed(2)}. Your intuition is terrifyingly accurate.`, tone: 'good' }
+    return {
+      text: `Near-perfect fit (R² = ${r2.toFixed(2)}). You're tracking the signal, not just memorizing noise.`,
+      tone: 'good',
+    }
   }
   if (Math.abs(sd) > 0.6) {
     const dir = sd > 0 ? 'too steep (positive)' : 'too steep (negative)'
-    return { text: `Slope is ${dir}. The data is less dramatic than your guess — try flattening it.`, tone: 'bad' }
+    return {
+      text: `Slope is ${dir} — often a sign you're fitting the noise, not the signal. Try flattening the line.`,
+      tone: 'bad',
+    }
   }
   if (Math.abs(id) > 12) {
     const dir = id > 0 ? 'too high' : 'too low'
-    return { text: `Slope is close, but your line sits ${dir}. Adjust the intercept.`, tone: 'ok' }
+    return {
+      text: `Slope is close, but the intercept sits ${dir}. Shift the line vertically without chasing outliers.`,
+      tone: 'ok',
+    }
   }
   if (r2 < 0) {
-    return { text: `R² is negative — your line is worse than a flat mean line. Classic overfit.`, tone: 'bad' }
+    return {
+      text: `R² is negative — your line fits worse than a flat mean. That's the textbook overfit pattern.`,
+      tone: 'bad',
+    }
   }
   return {
-    text: `Close! R² = ${r2.toFixed(2)}. Fine-tune the ${Math.abs(sd) > Math.abs(id / 20) ? 'slope' : 'intercept'} a little more.`,
+    text: `Close (R² = ${r2.toFixed(2)}). Nudge the ${Math.abs(sd) > Math.abs(id / 20) ? 'slope' : 'intercept'} — small moves beat chasing every point.`,
     tone: 'ok',
   }
+}
+
+/** One or two sentences after submit — only when it adds meaning */
+export function getWhatHappened(
+  mse: number,
+  r2: number,
+  guessSlope: number,
+  guessIntercept: number,
+  targetSlope: number,
+  targetIntercept: number
+): string {
+  const slopeDelta = Math.abs(guessSlope - targetSlope)
+  const intDelta = Math.abs(guessIntercept - targetIntercept)
+
+  if (r2 < 0) {
+    return `Your R² was negative. That means your line explained less variance than a flat mean line — the classic sign of overfitting to noise.`
+  }
+  if (r2 >= 0.85 && slopeDelta < 0.15 && intDelta < 6) {
+    return `Your R² was ${r2.toFixed(2)} — most of the spread is explained by your line. You captured the underlying trend, not random wiggles.`
+  }
+  if (mse > 400) {
+    return `MSE was ${mse.toFixed(0)} — on average, points sat far from your line (squared errors add up fast). Large gaps usually mean slope or intercept is off.`
+  }
+  if (slopeDelta > 0.5) {
+    return `Slope Δ was ${(guessSlope - targetSlope).toFixed(2)}. A big slope miss often means the line is tilted to hug outliers instead of the true trend.`
+  }
+  if (intDelta > 10) {
+    return `Intercept Δ was ${(guessIntercept - targetIntercept).toFixed(1)}. Your tilt may be fine, but the line is shifted up or down — vertical offset, not slope drama.`
+  }
+  if (r2 >= 0.5 && r2 < 0.85) {
+    return `R² was ${r2.toFixed(2)} — decent, but plenty of variance is still unexplained. You're in the ballpark; fine-tuning beats over-chasing points.`
+  }
+  return `R² was ${r2.toFixed(2)} and MSE was ${mse.toFixed(0)}. R² tells you how much variance your line explains; MSE tells you how far points sit on average (squared).`
 }
 
 export function lerp(a: number, b: number, t: number): number {

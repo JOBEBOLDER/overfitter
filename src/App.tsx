@@ -8,6 +8,7 @@ export default function App() {
     state,
     metrics,
     feedback,
+    whatHappened,
     lastResult,
     setGuessSlope,
     setGuessIntercept,
@@ -72,6 +73,7 @@ export default function App() {
           totalScore={state.totalScore}
           lastScore={lastResult?.score ?? null}
           feedback={feedback}
+          whatHappened={whatHappened}
           targetSlope={state.targetSlope}
           targetIntercept={state.targetIntercept}
           difficulty={state.difficulty}
