@@ -26,7 +26,6 @@ export function drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number) {
   // axes
   ctx.strokeStyle = 'rgba(0,0,0,0.12)'
   ctx.lineWidth = 1
-  const origin = toCanvas(0, 0, w, h)
   ctx.beginPath(); ctx.moveTo(PAD, h - PAD); ctx.lineTo(w - PAD, h - PAD); ctx.stroke()
   ctx.beginPath(); ctx.moveTo(PAD, PAD); ctx.lineTo(PAD, h - PAD); ctx.stroke()
 }
@@ -102,7 +101,7 @@ export function drawErrorLines(
 export function drawLineLegend(
   ctx: CanvasRenderingContext2D,
   w: number,
-  h: number,
+  _h: number,
   showTarget: boolean
 ) {
   const items = [
